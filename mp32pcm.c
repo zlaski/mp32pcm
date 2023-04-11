@@ -3,6 +3,8 @@
     
     ruckertm@acm.org
 
+    (Minor fixes (c) 2023 by Ziemowit Laski <zlaski@ziemas.net>)
+
     This file is part of mp32pcm.
 
     mp32pcm is free software; you can redistribute it and/or modify
@@ -1021,10 +1023,10 @@ next_frame (stream * s)
     else
       fill_input_buffer (s);
   previous_free_format = s->info.free_format;
-  if (!decode_header (&s->info, s->frame))
-    return NULL;
   s->byte_pointer = s->frame;
   s->bit_offset = 0;
+  if (!decode_header (&s->info, s->frame))
+    return NULL;
   if (s->info.free_format && !previous_free_format)
     return NULL;
   if (s->info.layer != 3)                                            /* 159 */
@@ -1906,6 +1908,8 @@ mp3_read (int id, mp3_sample * buffer, int size)
   s = streams[id];
   if (s == NULL)
     return MP3_ERROR_NOT_OPEN;
+  if (s->state & END_OF_INPUT)
+      return 0;
   if (s->state & END_OF_OUTPUT)                                      /*  56 */
     return MP3_ERROR_DONE;
   if (!(buffer == NULL && size == 0 && s->options.info_callback != NULL)        /*  30 */

@@ -3,6 +3,8 @@
     
     ruckertm@acm.org
 
+    (Minor fixes (c) 2023 by Ziemowit Laski <zlaski@ziemas.net>)
+
     This file is part of mp32pcm.
 
     mp32pcm is free software; you can redistribute it and/or modify
