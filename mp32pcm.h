@@ -109,6 +109,7 @@ typedef struct mp3_options
 #define MP3_DONT_FLUSH 0x0200                                        /*  73 */
 #define MP3_NO_PARTIAL_FRAME 0x1000                                  /* 330 */
   unsigned char (*equalizer)[32];                                    /* 444 */
+  void *user_param;
 } mp3_options;
 
 extern int mp3_open (                                                /*  11 */
@@ -122,6 +123,9 @@ mp3_read (int id, mp3_sample * buffer, int size)                     /*  13 */
 
      extern int mp3_close (int id)                                   /*  16 */
  ;
+
+extern void *
+mp3_user_param (int id);
 
 #ifdef __cplusplus
 }
