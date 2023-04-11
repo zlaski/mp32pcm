@@ -1883,6 +1883,19 @@ mp3_open (                                                           /*  11 */
   return id;
 }
 
+extern void*
+mp3_user_param (int id)
+{
+  stream* s;
+
+  if (id >= STREAMS || id < 0)
+    return (void*)MP3_ERROR_NO_ID;
+  s = streams[id];
+  if (s == NULL)
+    return (void*)MP3_ERROR_NOT_OPEN;
+  return s->options.user_param;
+}
+
 extern int
 mp3_close (int id)
 {                                                                    /*  16 */
