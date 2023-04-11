@@ -62,6 +62,7 @@ typedef struct mp3_info
   int bit_rate;
   int frame_size;
   int frame_position;
+  unsigned char *frame_payload;
   int samples;
   int private_bit;
   int mode;

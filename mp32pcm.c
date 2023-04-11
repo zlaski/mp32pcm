@@ -1949,6 +1949,7 @@ mp3_read (int id, mp3_sample * buffer, int size)
         return s->info.samples;
       }
     }
+    s->info.frame_payload = s->frame;
     s->byte_pointer = s->frame + HEADER_SIZE;                        /* 156 */
     s->bit_offset = 0;
     output_mode = s->info.layer;                                     /*  65 */
