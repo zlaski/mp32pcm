@@ -1,0 +1,6 @@
+[core]
+        autocrlf = input
+        eol = lf
+        
+[diff]
+        renames = copy
