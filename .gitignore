@@ -4,3 +4,6 @@ lib/
 include/
 .vs/
 *.user
+*.bak
+.build/
+.install/
