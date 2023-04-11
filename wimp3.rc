@@ -1,0 +1,129 @@
+// Microsoft Visual C++ generated resource script.
+//
+#include "resource.h"
+
+#define APSTUDIO_READONLY_SYMBOLS
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 2 resource.
+//
+#include "afxres.h"
+
+/////////////////////////////////////////////////////////////////////////////
+#undef APSTUDIO_READONLY_SYMBOLS
+
+/////////////////////////////////////////////////////////////////////////////
+// English (U.S.) resources
+
+#if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENU)
+#ifdef _WIN32
+LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_US
+#pragma code_page(1252)
+#endif //_WIN32
+
+#ifdef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// TEXTINCLUDE
+//
+
+1 TEXTINCLUDE 
+BEGIN
+    "resource.h\0"
+END
+
+2 TEXTINCLUDE 
+BEGIN
+    "#include ""afxres.h""\r\n"
+    "\0"
+END
+
+3 TEXTINCLUDE 
+BEGIN
+    "\r\n"
+    "\0"
+END
+
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Dialog
+//
+
+IDD_MAIN DIALOGEX 0, 0, 265, 75
+STYLE DS_SETFONT | DS_CONTROL | WS_CHILD
+EXSTYLE WS_EX_APPWINDOW
+FONT 8, "MS Sans Serif", 0, 0, 0x1
+BEGIN
+    CONTROL         "",IDC_BIG,"Static",SS_OWNERDRAW,5,30,205,40
+    RTEXT           "0",IDC_FRAME,5,5,50,8,NOT WS_GROUP
+    LTEXT           "Frame",IDC_STATIC,60,5,20,8,NOT WS_GROUP
+    RTEXT           "0",IDC_POSITION,5,15,50,8,NOT WS_GROUP
+    LTEXT           "Position",IDC_STATIC,60,15,26,8,NOT WS_GROUP
+    RTEXT           "MPEG",IDC_STATIC,100,5,25,8,NOT WS_GROUP
+    LTEXT           "1",IDC_VERSION,130,5,20,8,NOT WS_GROUP
+    RTEXT           "Mode",IDC_STATIC,100,15,25,8,NOT WS_GROUP
+    CONTROL         111,IDC_MODE,"Static",SS_BITMAP | SS_CENTERIMAGE,130,14,18,10
+    RTEXT           "0",IDC_FREQUENCY,155,5,25,8,NOT WS_GROUP
+    LTEXT           "Hz",IDC_STATIC,185,5,10,8,NOT WS_GROUP
+    RTEXT           "0",IDC_BITRATE,155,15,25,8,SS_CENTERIMAGE | NOT WS_GROUP
+    LTEXT           "kBit/s",IDC_STATIC,185,15,20,8,NOT WS_GROUP
+    CONTROL         113,IDC_ORIGINAL,"Static",SS_BITMAP | SS_CENTERIMAGE,215,4,11,10
+    LTEXT           "Original",IDC_STATIC,230,5,24,8
+    CONTROL         113,IDC_COPYRIGHT,"Static",SS_BITMAP | SS_CENTERIMAGE,215,14,11,10
+    LTEXT           "Copyright",IDC_STATIC,230,15,30,8
+    CONTROL         113,IDC_EMPHASIS,"Static",SS_BITMAP | SS_CENTERIMAGE,215,24,11,10
+    LTEXT           "Emphasis",IDC_STATIC,230,25,31,8
+    CONTROL         113,IDC_CRC,"Static",SS_BITMAP | SS_CENTERIMAGE,215,34,11,10
+    LTEXT           "CRC",IDC_STATIC,230,35,16,8
+    CONTROL         113,IDC_INTENSITY,"Static",SS_BITMAP | SS_CENTERIMAGE,215,44,11,10
+    LTEXT           "Intensity",IDC_STATIC,230,45,27,8
+    CONTROL         113,IDC_MIDSIDE,"Static",SS_BITMAP | SS_CENTERIMAGE,215,54,11,10
+    LTEXT           "Mid/Side",IDC_STATIC,230,55,30,8
+END
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// DESIGNINFO
+//
+
+#ifdef APSTUDIO_INVOKED
+GUIDELINES DESIGNINFO 
+BEGIN
+    IDD_MAIN, DIALOG
+    BEGIN
+        LEFTMARGIN, 7
+        TOPMARGIN, 7
+    END
+END
+#endif    // APSTUDIO_INVOKED
+
+
+/////////////////////////////////////////////////////////////////////////////
+//
+// Bitmap
+//
+
+IDB_STEREO              BITMAP                  "stereo.bmp"
+IDB_JOINTSTEREO         BITMAP                  "jointstereo.bmp"
+IDB_MONO                BITMAP                  "mono.bmp"
+IDB_ONLED               BITMAP                  "onled.bmp"
+IDB_OFFLED              BITMAP                  "offled.bmp"
+#endif    // English (U.S.) resources
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+#ifndef APSTUDIO_INVOKED
+/////////////////////////////////////////////////////////////////////////////
+//
+// Generated from the TEXTINCLUDE 3 resource.
+//
+
+
+/////////////////////////////////////////////////////////////////////////////
+#endif    // not APSTUDIO_INVOKED
+

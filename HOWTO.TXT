@@ -1,0 +1,652 @@
+
+
+                     How  To  Use  mp32pcm
+                     =====================
+
+mp32pcm is basically a big file of C code, containing
+
+< header files 9 >
+< private declarations 1 >
+< private types 42 >
+< global variables 43 >
+< auxiliary functions 69 >
+
+and
+
+< functions 39 >
+
+as most C programs do.  It is possible to produce a library or object
+file from it that can be linked with your favorite application. Any
+sensible use of mp32pcm is not possible, however, without some
+information on how to use the code that comprises mp32pcm.  This
+chapter provides informally all the information that a programmer will
+need to use mp32pcm. The formal aspects of this information, that are
+needed by the C compiler, are provided in the file mp32pcm.h, the
+header file.
+
+
+1  The Header File
+
+The header file mp32pcm.h will be included in the C files.  To make
+sure that the implementation obeys the formal requirements spelled out
+in the header file, even the implementation includes mp32pcm.h. It
+enables the C compiler to cross check the implementation against this
+part of the specification.
+
+< header files 9 >
+#include  "mp32pcm.h"        
+
+Together with the information provided below_the semantic
+specification_this is all you need to use mp32pcm.
+  The header file has the following layout:
+
+< mp32pcm.h 10>
+#include  <stdlib.h>
+   < public declarations 15 >
+
+   < type definition of mp3_sample  14 >
+   < type definition of mp3_info 23 >
+   < type definition of mp3_options 19>
+
+   < definition of mp3_open 11>;
+   < definition of mp3_read 13 >;
+   < definition of mp3_close 16>;
+
+You might observe that all the identifiers that are defined in the
+header file start with "mp3_" or "MP3_".  This is done to help avoid
+name conflicts with other identifiers used by the application.
+
+
+2  Streams
+
+The basic concept of mp32pcm is that of a stream.  Picture the
+decoding as an input stream of MPEG audio data flowing into the
+mp32pcm decoder, producing an output stream of PCM data.  Several such
+streams might coexist at the same time, representing e.g. several
+tracks of a mixing application. A stream is created by a call to the
+function mp3_open , used with mp3_read , and destroyed with mp3_close.
+
+
+
+   Fig. 21: Using mp32pcm
+
+
+
+   After successful completion, mp3_open will not return an internal
+data structure representing such a stream, but only a small, non
+negative integer, called a "handle" or an "id".  This technique
+provides an absolute separation between data that belongs to the
+application and data that belongs to mp32pcm.  This separation will
+allow upgrades in mp32pcm without affecting in any way existing
+applications, an advantage that makes programming with handles very
+common. For instance, the Windows API or the UNIX file handling
+primitives work with such handles in a very similar fashion.
+
+
+3  Creating Streams with mp3_open
+
+The function mp3_open will create a stream. Upon successful
+completion, mp3_open will always return the smallest non-negative
+number that is not yet associated with an open stream. E.g. opening
+five streams will return the numbers 0,1,2,3,4 in that order.  Then,
+after closing stream 2, the next call to mp3_open will return 2.  The
+stream id may be used by an application as an index into an array
+containing application specific supplemental information for the
+stream. On failure mp3_open will return a negative value.
+   mp3_open needs two parameters, a function to read the input and a
+pointer to options.
+
+< definition of mp3_open 11>
+   extern int mp3_open (
+  < definition of input_read 12 >;
+  < definition of option_pointer 18 >)
+ 
+
+Only the first parameter is mandatory, the second parameter may be
+NULL, in which case some reasonable defaults will be used.
+
+
+4  Demand Driven Decoding
+
+Streams work demand driven. That means, decoding is initiated by
+requesting some decoded output samples.  This request is made by
+calling the function mp3_read , which in turn might need some input
+data to work on.  It will therefore retrieve the input_read function
+that was provided in the mp3_open call.  This function is then used
+repeatedly to obtain the input needed.
+
+< definition of input_read 12 >
+   int (*input_read )(int id, void *buffer, size_t size)
+ 
+
+   Each call of input_read has three parameters, the id of the stream,
+the pointer to a buffer , and the buffer's size in byte.  The
+application that provides this function should fill the buffer with up
+to size byte and then return. The return value should give the exact
+number of byte written to the buffer , or zero if no more input is
+available. If an error occurs while the application is processing the
+input function, a negative value should be returned. As indicated
+before, the application might use the given id to distinguish between
+several streams and access stream specific information maintained by
+the application.
+   In the simplest form (see section 7), where a program uses just one
+single stream that reads data from the standard input, it is possible
+to make a single call to mp3_open (read, NULL ) providing the
+standard C function read as the input function.  The assigned stream
+id will be zero which matches the file handle for the standard input,
+producing valid calls to read (int fd, void *buffer, size_t size).
+
+
+
+5  Reading Streams with mp3_read
+
+Decoded PCM data can be obtained by calling the function mp3_read.
+
+< definition of mp3_read 13 >
+   extern int mp3_read (int id, mp3_sample * buffer, int size)
+ 
+
+It needs three arguments: The id of a stream that was returned by a
+successful call to mp3_open and was not closed by mp3_close in the
+meantime.  Further, a pointer to a buffer suitably aligned to receive
+the PCM samples, and the size of the buffer in samples.
+   The mp3_sample type is a signed integer type.  To obtain a standard
+compliant decoder, it must have at least 16 bit.  On my machine, with
+my compiler, this is a short int.  You can get higher precision output
+by providing a larger integer type, for instance a plain int , to
+obtain 32 bit output.  You may then post-process the output and round
+or dither it as desired. The choice of sample type has no noticeable
+influence on the runtime of the decoder.
+
+< type definition of mp3_sample 14 >
+   typedef short int mp3_sample;
+
+Due to the internal format of the bit stream, which is organized in
+frames, PCM data is produced in large chunks. Each chunk containing
+the data from one frame. Using layer I, a frame contains 384 samples,
+using layer II or layer III, a frame contains 1152 samples_twice this
+many samples are used for a stereo signal. It is mandatory to use a
+buffer containing at least MP3_MIN_BUFFER samples of type mp3_sample
+(approximately 4 kbyte).
+
+< public declarations 15 > 
+#define MP3_MIN_BUFFER (2 * 1152 )
+ 
+
+Note that even a single channel stream has the same minimum buffer
+requirements since it will use, at least temporarily, the same buffer
+space as a stereo signal.
+   mp3_read will attempt to read size decoded samples from the given
+stream to the buffer. On success, it will return the number of
+samples read. The return value zero indicates the end of the stream. A
+negative value indicates an error. It is not an error if the number
+returned is smaller than size.
+
+
+6  Closing the Stream with mp3_close
+
+After having read enough PCM data, or if the call to mp3_read returns
+zero, indicating that the end of the stream has been reached, the
+stream should be closed by calling the function mp3_close.
+
+< definition of mp3_close 16>
+   extern int mp3_close (int id)
+ 
+
+This function will close the stream and return all data structures
+associated with the stream to free storage.  It returns zero on
+success and a negative value if an error occurred. After closing a
+stream, its id must no longer be used in a call to mp3_read.  A later
+call to mp3_open might return again the same id for a new stream.
+
+
+7  A Simple Application
+
+The most simple, but still useful application reads MPEG audio data
+from the standard input and outputs PCM data to the standard
+output. It looks like this:
+
+< example.c 17> 
+#include <unistd.h> 
+#include "mp32pcm.h" 
+#define BUFSIZE (4 * MP3_MIN_BUFFER )
+   int main (void )
+   { int id;
+     mp3_sample buffer[BUFSIZE ];
+     int size;
+
+     id = mp3_open (read, NULL);
+     if (id < 0) return 1;
+     while ((size = mp3_read (id, buffer, BUFSIZE )) > 0)
+       write (1, buffer, size* sizeof (mp3_sample ));
+     if (mp3_close (id ) < 0) return 1;
+     return 0;
+   }
+
+An other sample application can be found in appendix D.
+
+
+8  Options
+
+It is often necessary to tailor the behavior of the decoder to
+specific needs.  For this purpose, options can be passed to the stream
+as part of the mp3_open call by supplying a pointer to a structure,
+called mp3_options.
+
+< definition of option_pointer 18 >
+   mp3_options *option_pointer
+
+If the pointer is NULL, the decoding engine will use reasonable
+default values.  The application may deallocate the option structure
+after the mp3_open call or reuse it at will.  The mp3_open function
+will make copies of all the data found in the mp3_options structure.
+
+< type definition of mp3_options 19>
+   typedef struct mp3_options {
+     < options 20 >
+   } mp3_options;
+
+Some options are just flags, that switch on certain features.
+
+< options 20 >
+   int flags;
+
+One such feature is for instance "two channel mono". Usually, the
+decoder will output two channel 16 or 32 bit interleaved samples. That
+is, the samples of the two channels alternate in the output and each
+sample is 16 bit long.  If the input is only a single channel stream
+(mono), the decoder will output only one channel, where each 16 bit
+sample is immediately followed by the next sample. If you prefer to
+get instead two interleaved channels, that happen to be equal, you
+should set a flag by OR-ing flags with this constant:
+
+< options 20 >+ 
+#define MP3_TWO_CHANNEL_MONO 0x0100
+
+More flags and further options are explained below. A complete list of
+all options can be found in Tab. 22.
+          ________________________________________________
+          |  Option                           |   Page   |
+          |___________________________________|__________|_
+          |  flags MP3_TWO_CHANNEL_MONO        |     27   |
+          |                                    |          |
+          |  flags MP3_DONT_FLUSH              |     41   |
+          |                                    |          |
+          |  flags MP3_SYNC_1                  |     33   |
+          |                                    |          |
+          |  flags MP3_SYNC_2                  |     33   |
+          |                                    |          |
+          |  flags MP3_SYNC_3                  |     33   |
+          |                                    |          |
+          |  flags MP3_INFO_NEVER              |     30   |
+          |                                    |          |
+          |  flags MP3_INFO_IGNORE             |     30   |
+          |                                    |          |
+          |  flags MP3_INFO_ONCE               |     30   |
+          |                                    |          |
+          |  flags MP3_INFO_FRAME              |     30   |
+          |                                    |          |
+          |  flags MP3_INFO_READ               |     30   |
+          |                                    |          |
+          |  flags MP3_INFO_PCM                |     30   |
+          |                                    |          |
+          |  flags MP3_INFO_MPG                |     30   |
+          |                                    |          |
+          |  flags MP3_INFO_CRC                |     30   |
+          |                                    |          |
+          |  flags MP3_INFO_RESERVED           |     30   |
+          |                                    |          |
+          |  flags MP3_NO_PARTIAL_FRAME        |    170   |
+          |                                    |          |
+          |  info_callback                     |     28   |
+          |                                    |          |
+          |  equalizer                         |    229   |
+          |____________________________________|__________|
+
+          Tab. 22: All options
+
+
+
+9  Information Retrieval
+
+When decoding a stream, not only the generated PCM data is of
+interest, but also other information like the sampling frequency, the
+number of channels, whether there is a copyright on the stream, and
+more such details. To store this information inside the stream, the
+stream is structured as a sequence of frames, where each frame stores
+the necessary information in a frame header. Whenever a header has
+been decoded, this information is available and can be passed to the
+application.  To receive the information, the application specifies an
+info_callback function as part of the options.
+
+< options 20 >+
+   int (*info_callback )(mp3_info *p );
+
+If NULL is supplied instead of a function, no callback will occur. The
+argument of the callback function is a pointer to an mp3_info
+structure containing the most recent information on the decoded
+stream_fresh from the header_ and some other useful data like e.g. the
+id of the stream and the header itself.
+
+< type definition of mp3_info 23 >
+   typedef struct mp3_info {
+     int id;
+     unsigned int header;
+
+     < infos 31 >
+   } mp3_info ;
+
+Each stream maintains its own info data structure
+
+< stream data 2 >+
+   mp3_info info;
+
+where its id is stored.
+
+< initialize s 25 >
+   s->info.id = id;
+
+   After inspecting the information provided, the info_callback
+function can alter the behavior of the decoder by specifying an
+appropriate return value.  The most common return value is
+MP3_CONTINUE.  Receiving it, the decoder will just do that, continue
+decoding. Alternatively, the callback function can return MP3_SKIP to
+skip the decoding of the current frame, return MP3_REPEAT to repeat
+the last frame, return MP3_REPAIR to reconstruct the frame from the
+last frame, or return MP3_MUTE to insert one frame of silence.
+
+< public declarations 15 >+                                                          
+#define  MP3_CONTINUE 0x0
+#define  MP3_SKIP     0x0100
+#define  MP3_REPEAT   0x0200
+#define  MP3_MUTE     0x0400
+#define  MP3_REPAIR   0x0800
+
+The return value MP3_SKIP can be combined, using a bitwise OR
+operator, with either MP3_REPEAT , MP3_REPAIR , or MP3_MUTE
+effectively replacing the current frame.  By returning MP3_SKIP for
+every frame, an application can collect all the information about the
+stream without incurring the computational cost of decoding it.
+   Another possible return value is MP3_BREAK
+
+< public declarations 15 >+                                                          
+#define  MP3_BREAK     0x1000
+
+If used, the current frame will not be decoded; instead, the mp3_read
+function will return immediately delivering all the samples decoded so
+far_may be none. The next call to mp3_read will then resume decoding
+with the current frame which might cause a second callback to occur,
+if the flags that control the callback mechanism permit.
+
+   The effect of returning MP3_ERROR , or any other negative value, is
+similar to re- turning MP3_BREAK.  Instead of returning the number of
+decoded samples, however, the function mp3_read will just pass through
+to its caller the return value from the information callback.
+
+< public declarations 15 >+                                                          
+#define  MP3_ERROR   - 1
+
+
+
+10  Controlling info_callback and mp3_read
+
+The application can control exactly when a callback will occur by
+OR-ing together the following values and storing them in the flags
+field.
+
+< options 20 >+                                                                      
+#define  MP3_INFO_NEVER    0x00                        /* call info_callback never */
+#define  MP3_INFO_IGNORE   0x01                                 /* flag is ignored */
+#define  MP3_INFO_ONCE     0x02   /* call info_callback once at the very beginning */
+#define  MP3_INFO_FRAME    0x04              /* call info_callback for each frame, */
+#define  MP3_INFO_READ     0x08                /* . . .for each call to mp3_read   */
+#define  MP3_INFO_PCM      0x10             /* . . .for each PCM parameter change, */
+#define  MP3_INFO_MPG      0x20            /* . . .for each MPEG parameter change, */
+#define  MP3_INFO_CRC      0x40                  /* . . .if a CRC error occurred.  */
+#define  MP3_INFO_RESERVED 0x80                                  /* for future use */
+
+   A change in the PCM format means either the sample rate or the
+mode, determining the number of channels, has changed.  A change in
+the MPEG format could be a change in the version, the layer, the bit
+rate, the CRC protection, the mode, the copyright state, the original
+state, or the emphasis.
+   After a callback has occurred, the application can change the
+settings for the next callback using a simple mechanism: a non zero
+low order byte of a non negative return value will be used to set the
+corresponding flags.  This means that, unless the application uses a
+negative return value, it can simply OR the new flags with the usual
+return value.  There is only one exception to this rule: If the new
+value is supposed to be MP3_INFO_NEVER , the low order byte would be
+zero and the old value would remain untouched.  In this case the
+application has to use MP3_INFO_IGNORE to achieve the desired effect.
+   Since the interpretation of the data that is returned by mp3_read
+depends on the information obtained through info_callback , it is
+often necessary to control the synchronization between the two
+functions.  As a general rule, the application will call mp3_read ,
+then receives an info_callback, and finally mp3_read returns the PCM
+data.  The information presented by the info_callback should then be
+valid for the PCM data returned by mp3_read.  It is, however,
+possible that some information is valid at the beginning of the data
+returned by mp3_read , but then changes, and is not longer valid at
+the end of the returned data.  This might be no problem_for instance
+in a variable bit rate stream, the bit rate changes, but this change
+has no influence on any further processing of the decoded data_or this
+might as well be a big problem_if for instance the sample rate of the
+output data changes in the middle of the stream (which is not quite
+conforming to the standard, but happens anyway).
+   In all these cases, you might get several information callbacks
+before the mp3_read function returns, depending on the setting of the
+flags.  This is sometimes not desirable, because it is then difficult
+to correlate the change in information with the data returned.  By
+returning the value MP3_BREAK from the info_callback , an application
+can achieve complete synchronization of information and PCM data.
+   A special case occurs, if mp3_read is called with the size
+parameter set to zero, the buffer set to NULL, and a nonzero
+info_callback function. We call this the
+
+< callback exception 30 >
+   (buffer NULL ^ size 0 ^ s->options.info_callback 6= NULL)
+ 
+
+   In this case, the next frame header in the stream is analyzed and
+the info_callback function is invoked, but no attempt is made to
+decode the data inside the frame.  In other words, calling mp3_read
+this way implies a callback with an implicit return value of
+MP3_BREAK.  This can be used at the beginning of the decoding process
+to advance the stream to the first frame and to extract information
+from the first frame without starting the decoding.
+
+
+11  MPEG Format Information
+
+mp32pcm can decode streams for three different MPEG versions.  MPEG
+Version 1 is described by ISO/IEC 11172-3, and MPEG Version 2 is
+described by ISO/IEC 13818-3. MPEG Version 2.5 is a later extension of
+Version 2 to include lower sample rates and is not an ISO/IEC
+standard.  In addition to the different versions, the standard
+specifies three different layers of increasing complexity and
+performance. Layer III became very popular and is widely known as
+"MP3".  The layer information, 1, 2, or 3, is given as a plain
+integer, the version information has three possible values listed
+below.
+
+< infos 31 >
+   int version;                                            /* can be one of */
+#define  MP3_V1_0     0x00              /* MPEG Version 1 (ISO/IEC 11172-3) */
+#define  MP3_V2_0     0x01              /* MPEG Version 2 (ISO/IEC 13818-3) */
+#define  MP3_V2_5     0x02  /* MPEG Version 2.5 (later extension of MPEG 2) */
+   int layer;                                                                  
+
+MPEG frames provide more information that is specific to the MPEG
+format.
+
+< infos 31 >+                                                                        
+   int crc_protected;                                /* can be TRUE or FALSE */
+   int bit_rate;                                     /* the frame's bit rate */
+   int frame_size;                            /* the byte size of this frame */
+   int frame_position;      /* the byte position of this frame in the stream */
+   int samples;                      /* the number of samples decoded so far */
+   int private;                                          /* a bit of privacy */
+   int mode ;                          /* mode   can be one of the following */
+#define  MP3_STEREO     0x00
+#define  MP3_JOINT_STEREO       0x01
+#define  MP3_DUAL_CHANNEL       0x02
+#define  MP3_MONO     0x03
+   int copyright;                                    /* can be TRUE or FALSE */
+   int original;                                     /* can be TRUE or FALSE */
+   int emphasis ;                                       /* can be 0,1,2 or 3 */
+   int frame;                                           /* counts the frames */
+
+
+12  PCM Format Information
+
+In regard to the PCM data, there are only three aspects of interest:
+the number of bit per sample, the number of samples per second (the
+sample frequency or sample rate) and the number of channels, either 1
+for mono or 2 for stereo. Normally these parameters should not change
+within a single stream.
+
+< infos 31 >+                                                                        
+   int sample_rate;                                     /* the frequency in Hz */
+   int channels;                     /* the number of channels 1=mono 2=stereo */
+   int bit_per_sample;
+
+The bit_per_sample is determined by the decoder, not by the stream.
+We have invariably:
+
+< initialize s 25 >+                                                                 
+   s->info.bit_per_sample = sizeof(mp3_sample) * 8;
+
+
+13  Stream Synchronization
+
+MPEG streams are defined as streams of bit containing MPEG audio data
+packaged in so called frames. In practice there is often other data
+also part of the stream.
+   Sometimes, so called tags (see section 14), contain supplemental
+information, like the name of the song writer, the album, the track
+number, or even a picture of the performer.  In other cases,
+especially if MPEG streams are transmitted over an unreliable medium
+like the Internet, part of the stream is just garbage, e.g. it
+consists of partial or corrupted frames. In all these cases, it is
+necessary to find a valid frame in the stream before decoding can
+begin. This is called synchronizing the stream. To help with
+synchronizing, every frame starts on a byte boundary with twelve (or
+eleven) consecutive 1 bit. This is called the "syncword". In the
+simplest case, synchronization means skipping input byte until twelve,
+consecutive, byte aligned 1-bit are found.
+   This simple version is, however, not very reliable.  Even in a
+random bit stream, roughly every 2000 byte will contain such a
+syncword. The same 2000 byte taken from an MPEG stream might contain
+in addition only 4 to 5 true syncwords.  Therefore, if we start
+decoding a valid MPEG bit stream somewhere in the middle, as it is the
+case if we switch on an Internet radio station, false synchronization
+is quite likely.
+   To improve synchronization, the decoder can determine the frame
+length from the suspected frame header and check, if after the current
+frame there is a second frame exactly at the position predicted.
+Doing this for two or even three frames, makes synchronization more
+and more secure.  On the other hand, if the input contains many errors
+it might be impossible to find enough correct frames in a row and
+synchronization might fail completely (whether it is worth listening
+to such a stream is a different question altogether). By default,
+synchronization requires checking two consecutive syncwords.
+   The following values can be used to set the right flags to alter
+this behavior.
+
+< options 20 >+                                                                      
+#define  MP3_SYNC_1     0x0400          /* . . .trust a single syncword */
+#define  MP3_SYNC_2     0x0000    /* . . .trust two syncwords (default) */
+#define  MP3_SYNC_3     0x0800            /* . . .trust three syncwords */
+
+Once the stream is synchronized, the decoder will predict the next
+syncword from past information and trust a single syncword, if found
+at the predicted location.
+
+
+14  Tags
+
+Tags are considered a valid part of an MPEG stream.  Since there are
+different tag formats and the interpretation of tags is highly
+application dependent, mp32pcm will not do anything with tags, except
+to detect them and forward them to the tag_handler.  The tag_handler
+is a function, that can be provided as part of the
+
+< options 20 >+                                                                      
+   < definition of tag_handler 37>;
+
+It is called whenever the decoding engine detects data in the stream
+that is not a valid frame.  Because there is no absolute criteria to
+distinguish tags from plain garbage, even garbage is forwarded to the
+tag_handler. In case the value supplied for the tag handler is NULL,
+tags are just skipped.
+
+< definition of tag_handler 37>
+   void (*tag_handler )(int id, < tag_read function 38 >)
+
+The first parameter of the tag_handler identifies the stream, that
+contains the tag.  The next parameter is the < tag_read function 38
+>. The tag_handler should use it to read whatever it needs from the
+stream.
+
+< tag_read function 38 >
+   int tag_read (int id, void *buffer, int count )
+ 
+
+The function tag_read must identify the stream by the parameter id,
+and it is manda- tory to use the id that was given as first argument
+to the tag_handler.  It further provides a buffer to be filled with
+count byte from the MPEG stream. The function will return the actual
+number of byte read, which will be less or equal to count. The
+function will return 0 if the end of the MPEG stream is reached.  If
+an error occurs while reading, the function returns a negative value.
+   Normaly the parameter count will be positive and the corresponding
+number of byte will be removed from the input and put into the buffer.
+Conveniently, the tag_read function is reversible (to a large degee).
+If count is negative, as one should expect, the corresponding number
+of byte are taken from the buffer and put back into the input.  This
+feature can be used to push back byte into the input, allowing the tag
+reader some look ahead.
+
+   A simple tag handler can look like this:
+
+#define LOOKAHEAD 10
+
+void tag_handler (int id, int tag_read (int id, void *buffer, int count ))
+   { unsigned char lookahead [LOOKAHEAD ];
+     int count;
+
+     count = 0;
+     while (count < LOOKAHEAD )
+     { int k = tag_read (id, lookahead + count, LOOKAHEAD - count );
+
+       if (k 0) break ;
+       else count = count +k
+     }
+
+     if (count < LOOKAHEAD )
+     { tag_read (id, lookahead, -count );
+       return ;
+     }
+
+     inspect the lookahead
+
+     if (there is a tag) read further input and process the tag
+     else  tag_read(id, lookahead, -count );
+   }
+
+
+The above code reads a fixed amount of look ahead into a buffer. If
+there is unsufficient input, the tag handler is not interested in this
+tag any more and writes the partial look ahead, obtained so far, back
+to the stream.  Otherwise, it can inspect the look ahead and possibly
+process the tag. If no tag was found, again the tag handler returns
+the look ahead.
+   The code illustrates how to read data from the stream, and how to
+write excess data back to the stream. The push back will work under
+two conditions.
+
+
+o The tag_handler must not push back more byte than it has read.
+
+o It must not push back more than BUFFERSIZE - MAX_RESERVOIR byte.
