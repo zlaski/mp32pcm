@@ -24,6 +24,11 @@
 */
 
 #include <stdlib.h>                                                  /*  10 */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define MP3_MIN_BUFFER (2*1152)                                      /*  15 */
 #define MP3_CONTINUE 0                                               /*  26 */
 #define MP3_SKIP   0x0100
@@ -58,7 +63,7 @@ typedef struct mp3_info
   int frame_size;
   int frame_position;
   int samples;
-  int private;
+  int private_bit;
   int mode;
 #define MP3_STEREO       0x00
 #define MP3_JOINT_STEREO 0x01
@@ -116,3 +121,7 @@ mp3_read (int id, mp3_sample * buffer, int size)                     /*  13 */
 
      extern int mp3_close (int id)                                   /*  16 */
  ;
+
+#ifdef __cplusplus
+}
+#endif

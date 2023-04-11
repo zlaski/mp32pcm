@@ -480,7 +480,7 @@ decode_header (mp3_info * info, unsigned char *frame)
     int bits = header >> (32 - n);                                   /*  80 */
 
     header = header << n;
-    info->private = bits;
+    info->private_bit = bits;
   }
   {
     int n = 2;                                                       /*  94 */
