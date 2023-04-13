@@ -661,6 +661,38 @@ crc_check (stream * s)
   return crc;
 }
 
+extern short unsigned int
+mp3_frame_crc (unsigned char* frame)
+{
+  stream tmp_stream = { 0 };
+
+  if (!decode_header(&tmp_stream.info, frame) || !tmp_stream.info.crc_protected)
+    return 0;
+
+  static const int side_info_size[2][2] = {                      /* 430 */
+    {17, 9},
+    {32, 17}
+  };
+
+  tmp_stream.frame = frame;
+  tmp_stream.info.fixed_size = HEADER_SIZE + 2 * tmp_stream.info.crc_protected +
+    side_info_size[tmp_stream.info.version == MP3_V1_0][tmp_stream.info.mode == MP3_MONO];
+
+  return crc_check(&tmp_stream);
+}
+
+extern int
+mp3_frame_size (unsigned char* frame)
+{
+  stream tmp_stream = { 0 };
+
+  if (!decode_header(&tmp_stream.info, frame))
+    return 0;
+
+  return tmp_stream.info.frame_size;
+}
+
+
 static void
 layer_I_decode_samples (stream * s)
 {                                                                    /* 122 */
