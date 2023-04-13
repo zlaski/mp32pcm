@@ -127,6 +127,12 @@ mp3_read (int id, mp3_sample * buffer, int size)                     /*  13 */
 extern void *
 mp3_user_param (int id);
 
+extern short unsigned int
+mp3_frame_crc (unsigned char* frame);
+
+extern int
+mp3_frame_size (unsigned char* frame);
+
 #ifdef __cplusplus
 }
 #endif
