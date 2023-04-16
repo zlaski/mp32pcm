@@ -108,6 +108,7 @@ typedef struct mp3_options
     );
 #define MP3_DONT_FLUSH 0x0200                                        /*  73 */
 #define MP3_NO_PARTIAL_FRAME 0x1000                                  /* 330 */
+#define MP3_BACKUP_RESERVOIR 0x2000
   unsigned char (*equalizer)[32];                                    /* 444 */
   void *user_param;
 } mp3_options;

@@ -110,6 +110,7 @@ tag_read (int id, void *buffer, int count)                           /*  38 */
        int state;                                                    /*  58 */
        char bit_offset;                                              /* 145 */
        unsigned char *byte_pointer;
+       unsigned char backup_reservoir[MAX_RESERVOIR];
        unsigned char buffer[BUFFERSIZE];                             /* 149 */
        unsigned char *start;                                         /* 151 */
        unsigned char *finish;
@@ -2179,8 +2180,12 @@ mp3_read (int id, mp3_sample * buffer, int size)
         reservoir_size = getbit (s, 8);
       s->main_data_start = s->frame - reservoir_size;
       if (s->main_data_start < s->start) {
-        s->main_data_start = s->start;                               /* 323 */
-        output_mode = SKIP;
+        if (s->options.flags & MP3_BACKUP_RESERVOIR)
+          memset (s->main_data_start, 0x55, s->start - s->main_data_start);
+        else {
+          s->main_data_start = s->start;                             /* 323 */
+          output_mode = SKIP;
+        }
       }
     }
     if (s->options.info_callback != NULL) {                          /*  61 */
